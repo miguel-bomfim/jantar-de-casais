@@ -93,6 +93,7 @@
     <label>Texto acima do nome</label>
     <input type="text" id="rotulo" value="Convite especial para">
     <button id="dl">Baixar convite (PNG)</button>
+    <div id="saved" style="margin-top:16px"></div>
   </div>
   <script>
     const img = new Image();
@@ -122,9 +123,17 @@
     ['nome', 'rotulo'].forEach(i => document.getElementById(i).addEventListener('input', draw));
     document.fonts.load('60px "Allura"').then(draw); document.fonts.load('500 26px Montserrat').then(draw);
     document.getElementById('dl').onclick = () => {
-      const a = document.createElement('a');
-      a.download = 'convite-' + (document.getElementById('nome').value || 'casal').replace(/[^\w]+/g, '-') + '.png';
-      a.href = c.toDataURL('image/png'); a.click();
+      const nome = 'convite-' + (document.getElementById('nome').value || 'casal').replace(/[^\w]+/g, '-') + '.png';
+      c.toBlob(async blob => {
+        const file = new File([blob], nome, { type: 'image/png' });
+        const box = document.getElementById('saved');
+        const url = URL.createObjectURL(blob);
+        box.innerHTML = '<p>Se o download não começou, <b>toque e segure a imagem abaixo</b> e escolha "Salvar imagem" / "Adicionar às Fotos".</p><img src="' + url + '" style="width:100%;border-radius:6px">';
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try { await navigator.share({ files: [file], title: 'Convite' }); return } catch (e) { if (e.name === 'AbortError') return }
+        }
+        const a = document.createElement('a'); a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+      }, 'image/png');
     };
   </script>
 </body>
